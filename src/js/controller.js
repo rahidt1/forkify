@@ -23,11 +23,13 @@ const controlRecipes = async function () {
     // 2) Render recipe
     recipeView.render(model.state.recipe);
   } catch (err) {
-    console.error(err);
+    // Catch error from 'model.js'
+    // Render error in 'recipeiew.js'
+    recipeView.renderError();
   }
 };
 
-// Publish-subcriber design pattern
+// Publish-subscriber design pattern
 const init = function () {
   recipeView.addHandlerRender(controlRecipes);
 };

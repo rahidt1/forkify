@@ -25,6 +25,9 @@ export const loadRecipe = async function (id) {
     };
     // console.log(state.recipe);
   } catch (err) {
-    console.error(err);
+    // Catch error from 'helpers.js'
+    // Re-throwing error, because we want to handle the error in 'controller.js', not here
+    throw err;
+    // console.error(err);
   }
 };

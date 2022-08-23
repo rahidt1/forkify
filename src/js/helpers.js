@@ -18,6 +18,7 @@ export const getJSON = async function (url) {
 
     return data;
   } catch (err) {
+    // Original error occured here
     // Re-throwing error, because we want to handle the error in 'model.js', not here
     // If not, in case of error, the promise that returns from here will still be returned as fulfilled (successful) promise
     throw err;
