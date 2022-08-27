@@ -32,6 +32,10 @@ const controlRecipes = async function () {
 
     // 2) Render recipe
     recipeView.render(model.state.recipe);
+
+    // 3} Update search results
+    // As new recipe loads (beacuse of hash change), we update the resultsView page, to add the 'preview__link--active' class to the current recipe from the recipe list
+    resultsView.update(model.getSearchResultsPage());
   } catch (err) {
     // Catch error from 'model.js'
     // Render error in 'recipeiew.js'
@@ -77,7 +81,8 @@ const controlServings = function (newServings) {
   model.updateServings(newServings);
 
   // Update the recipe view
-  recipeView.render(model.state.recipe);
+  // recipeView.render(model.state.recipe); // Render the entire view
+  recipeView.update(model.state.recipe); // Only updates texts
 };
 
 // Publish-subscriber design pattern
