@@ -3,6 +3,7 @@ import recipeView from './views/recipeView.js';
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
 import paginationView from './views/paginationView.js';
+import bookmarksView from './views/bookmarksView.js';
 
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
@@ -18,6 +19,7 @@ import { async } from 'regenerator-runtime';
 //   module.hot.accept();
 // }
 
+//***********************************************//
 // Individual recipe
 const controlRecipes = async function () {
   try {
@@ -36,6 +38,7 @@ const controlRecipes = async function () {
     // 3} Update search results
     // As new recipe loads (beacuse of hash change), we update the resultsView page, to add the 'preview__link--active' class to the current recipe from the recipe list
     resultsView.update(model.getSearchResultsPage());
+    bookmarksView.update(model.state.bookmarks);
   } catch (err) {
     // Catch error from 'model.js'
     // Render error in 'recipeiew.js'
@@ -43,6 +46,7 @@ const controlRecipes = async function () {
   }
 };
 
+//***********************************************//
 // Search results
 const controlSearchResults = async function () {
   try {
@@ -66,6 +70,7 @@ const controlSearchResults = async function () {
   }
 };
 
+//***********************************************//
 // Control Pagination
 const controlPagination = function (goToPage) {
   // 3. Render NEW results
@@ -75,6 +80,7 @@ const controlPagination = function (goToPage) {
   paginationView.render(model.state.search);
 };
 
+//***********************************************//
 // Update recipe servings
 const controlServings = function (newServings) {
   // Update the recipe servings (in state)
@@ -85,10 +91,26 @@ const controlServings = function (newServings) {
   recipeView.update(model.state.recipe); // Only updates texts
 };
 
+//***********************************************//
+// Control Bookmark
+const controlAddBookmark = function () {
+  // 1. Add/Remove Bookmark
+  if (!model.state.recipe.bookmarked) model.addBookmark(model.state.recipe);
+  else model.deleteBookmark(model.state.recipe.id);
+
+  // 2. Update recipe View
+  recipeView.update(model.state.recipe);
+
+  // 3. Render bookmarks
+  bookmarksView.render(model.state.bookmarks);
+};
+
+//***********************************************//
 // Publish-subscriber design pattern
 const init = function () {
   recipeView.addHandlerRender(controlRecipes);
   recipeView.addHandlerUpdateServings(controlServings);
+  recipeView.addHandlerAddBookmark(controlAddBookmark);
   searchView.addHanderSearch(controlSearchResults);
   paginationView.addHandlerClick(controlPagination);
 };
