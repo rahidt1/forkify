@@ -29,20 +29,23 @@ const controlRecipes = async function () {
     if (!id) return;
     recipeView.renderSpinner();
 
-    // 1) Load recipe from api
-    await model.loadRecipe(id);
-
-    // 2) Render recipe
-    recipeView.render(model.state.recipe);
-
-    // 3} Update search results
+    // 1. Update search results
     // As new recipe loads (beacuse of hash change), we update the resultsView page, to add the 'preview__link--active' class to the current recipe from the recipe list
     resultsView.update(model.getSearchResultsPage());
+
+    // 2. Update bookmarks
     bookmarksView.update(model.state.bookmarks);
+
+    // 3. Load recipe from api
+    await model.loadRecipe(id);
+
+    // 4. Render recipe
+    recipeView.render(model.state.recipe);
   } catch (err) {
     // Catch error from 'model.js'
     // Render error in 'recipeiew.js'
     recipeView.renderError();
+    console.error(err);
   }
 };
 
@@ -105,9 +108,16 @@ const controlAddBookmark = function () {
   bookmarksView.render(model.state.bookmarks);
 };
 
+// Render bookmars as soon as the page loads
+// Important for rendering the from the local storage
+const controlLoadBookmarks = function () {
+  bookmarksView.render(model.state.bookmarks);
+};
+
 //***********************************************//
 // Publish-subscriber design pattern
 const init = function () {
+  bookmarksView.addHandlerRender(controlLoadBookmarks);
   recipeView.addHandlerRender(controlRecipes);
   recipeView.addHandlerUpdateServings(controlServings);
   recipeView.addHandlerAddBookmark(controlAddBookmark);

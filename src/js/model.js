@@ -2,6 +2,8 @@ import { async } from 'regenerator-runtime';
 import { API_URL, RESULTS_PER_PAGE } from './config.js';
 import { getJSON } from './helpers.js';
 
+//***********************************************//
+// All data
 export const state = {
   recipe: {},
   search: {
@@ -13,6 +15,8 @@ export const state = {
   bookmarks: [],
 };
 
+//***********************************************//
+// Individual recipe
 export const loadRecipe = async function (id) {
   try {
     // Here an async function (loadRecipe) calling an async function (getJSON)
@@ -42,6 +46,8 @@ export const loadRecipe = async function (id) {
   }
 };
 
+//***********************************************//
+// Search Result
 export const loadSearchResults = async function (query) {
   try {
     state.search.query = query;
@@ -74,6 +80,8 @@ export const getSearchResultsPage = function (page = state.search.page) {
   return state.search.results.slice(start, end); // 0-9 Slice method dont include last number
 };
 
+//***********************************************//
+// Update Servings
 export const updateServings = function (newServings) {
   state.recipe.ingredients.forEach(ing => {
     // newQuantity = (oldQuantity * newServings) / oldServings
@@ -83,12 +91,20 @@ export const updateServings = function (newServings) {
   state.recipe.servings = newServings;
 };
 
+//***********************************************//
+// Bookmarks
+const storeBookmarks = function () {
+  localStorage.setItem('bookmarks', JSON.stringify(state.bookmarks));
+};
+
 export const addBookmark = function (recipe) {
   // Add Bookmark
   state.bookmarks.push(recipe);
 
   // Mark current recipe as Bookmarked
   if (recipe.id === state.recipe.id) state.recipe.bookmarked = true;
+
+  storeBookmarks();
 };
 
 export const deleteBookmark = function (id) {
@@ -98,4 +114,14 @@ export const deleteBookmark = function (id) {
 
   // Mark current recipe as NOT Bookmarked
   if (id === state.recipe.id) state.recipe.bookmarked = false;
+
+  // Store Bookmarks in local storage
+  storeBookmarks();
 };
+
+// Get data from local storage as soon as page loads
+const init = function () {
+  const storage = localStorage.getItem('bookmarks');
+  if (storage) state.bookmarks = JSON.parse(storage);
+};
+init();
