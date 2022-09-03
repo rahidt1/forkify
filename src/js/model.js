@@ -1,6 +1,7 @@
 import { async } from 'regenerator-runtime';
-import { API_URL, RESULTS_PER_PAGE } from './config.js';
-import { getJSON } from './helpers.js';
+import { API_URL, RESULTS_PER_PAGE, KEY } from './config.js';
+// import { getJSON, sendJSON } from './helpers.js';
+import { AJAX } from './helpers.js';
 
 //***********************************************//
 // All data
@@ -15,26 +16,51 @@ export const state = {
   bookmarks: [],
 };
 
+/**
+ * Format data coming from the API
+ * @param {Object} data The data to be formatted according to our need
+ * @returns {Object} Object that we store in our local storage
+ */
+const createRecipeObject = function (data) {
+  const { recipe } = data.data;
+  return {
+    cookingTime: recipe.cooking_time,
+    id: recipe.id,
+    image: recipe.image_url,
+    ingredients: recipe.ingredients,
+    publisher: recipe.publisher,
+    servings: recipe.servings,
+    sourceUrl: recipe.source_url,
+    title: recipe.title,
+    ...(recipe.key && { key: recipe.key }),
+    /*
+    // recipe.key exist? if so, it returns { key: recipe.key }
+    // else '&&' short circuits and returns undefined
+    // ...undefined  returns nothing
+    // ...{ key: recipe.key } returns key: recipe.key
+    Example: ...{ key1: 1, key2: 2} -> key1: 1, key2: 2
+    */
+  };
+};
+
 //***********************************************//
-// Individual recipe
+/**
+ * Getting a particular recipe from API.
+ * @param {string} id of the particular recipe
+ * @returns {undefined}
+ * Add (store) the current recipe in state.
+ * Check if the recipe is bookmarked or not, change the state accordingly.
+ */
 export const loadRecipe = async function (id) {
   try {
     // Here an async function (loadRecipe) calling an async function (getJSON)
     // As async function return a promise, here we are handling the promise using await
-    const data = await getJSON(`${API_URL}${id}`);
+    const data = await AJAX(`${API_URL}${id}?key=${KEY}`);
 
-    const { recipe } = data.data;
-    state.recipe = {
-      cookingTime: recipe.cooking_time,
-      id: recipe.id,
-      image: recipe.image_url,
-      ingredients: recipe.ingredients,
-      publisher: recipe.publisher,
-      servings: recipe.servings,
-      sourceUrl: recipe.source_url,
-      title: recipe.title,
-    };
+    state.recipe = createRecipeObject(data);
+    console.log(state);
 
+    // Check if the recipe is bookmarked or not
     if (state.bookmarks.some(bookmark => bookmark.id === id))
       state.recipe.bookmarked = true;
     else state.recipe.bookmarked = false;
@@ -48,10 +74,15 @@ export const loadRecipe = async function (id) {
 
 //***********************************************//
 // Search Result
+/**
+ * Get the search result from API based on query
+ * @param {string} query The recipe to be searched (e.g. Pizza)
+ * @returns {undefined}
+ */
 export const loadSearchResults = async function (query) {
   try {
     state.search.query = query;
-    const data = await getJSON(`${API_URL}?search=${query}`);
+    const data = await AJAX(`${API_URL}?search=${query}&key=${KEY}`);
 
     state.search.results = data.data.recipes.map(rec => {
       return {
@@ -59,6 +90,7 @@ export const loadSearchResults = async function (query) {
         image: rec.image_url,
         publisher: rec.publisher,
         title: rec.title,
+        ...(rec.key && { key: rec.key }),
       };
     });
 
@@ -70,6 +102,11 @@ export const loadSearchResults = async function (query) {
   }
 };
 
+/**
+ * Render number of results per page
+ * @param {*} page No. of recipe to rendered
+ * @returns {Number} No. of results to be rendered
+ */
 export const getSearchResultsPage = function (page = state.search.page) {
   // Storing the page number in state
   state.search.page = page;
@@ -81,7 +118,10 @@ export const getSearchResultsPage = function (page = state.search.page) {
 };
 
 //***********************************************//
-// Update Servings
+/**
+ * Update recipe according to no. of servings
+ * @param {Number} newServings Update the quantity of recipes based on this
+ */
 export const updateServings = function (newServings) {
   state.recipe.ingredients.forEach(ing => {
     // newQuantity = (oldQuantity * newServings) / oldServings
@@ -125,3 +165,51 @@ const init = function () {
   if (storage) state.bookmarks = JSON.parse(storage);
 };
 init();
+
+/**
+ * Clear bookmarks from local storage (for dev purpose only)
+ */
+const clearBookmarks = function () {
+  localStorage.clear('bookmarks');
+};
+// clearBookmarks();
+
+//***********************************************//
+/**
+ * Upload recipe to the API
+ * @param {Object} newRecipe Recipe to be uploaded in the API
+ */
+// It makes a request to the API, hence 'async' function
+export const uploadRecipe = async function (newRecipe) {
+  try {
+    const ingredients = Object.entries(newRecipe)
+      .filter(entry => entry[0].startsWith('ingredient') && entry[1] !== '')
+      .map(ing => {
+        const ingArr = ing[1].split(',').map(el => el.trim());
+
+        if (ingArr.length !== 3)
+          throw new Error(
+            'Wrong ingredient format. Please use the correct format.'
+          );
+
+        const [quantity, unit, description] = ingArr;
+
+        return { quantity: quantity ? +quantity : null, unit, description };
+      });
+    const recipe = {
+      title: newRecipe.title,
+      source_url: newRecipe.sourceUrl,
+      image_url: newRecipe.image,
+      publisher: newRecipe.publisher,
+      cooking_time: +newRecipe.cookingTime,
+      servings: +newRecipe.servings,
+      ingredients,
+    };
+    const data = await AJAX(`${API_URL}?key=${KEY}`, recipe);
+    state.recipe = createRecipeObject(data);
+    addBookmark(state.recipe);
+  } catch (err) {
+    // Error occured in async function, retuned as fulfilled promise, so we have to re-throw the error to catch it
+    throw err;
+  }
+};

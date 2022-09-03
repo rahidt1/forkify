@@ -5,6 +5,13 @@ import icons from 'url:../../img/icons.svg'; //Parcel 2
 export default class View {
   _data;
 
+  /**
+   * Render the received object to the DOM
+   * @param {Object | Object[]} data The data to be rendered (e.g. recipe)
+   * @param {boolean} [renderMarkup=true] If false, create markup string instead of rendering to the DOM
+   * @returns {undefined | string} A markup string is returned if renderMarkup=false
+   * @this {} Points to View.js
+   */
   render(data, renderMarkup = true) {
     // If there is no data or there is data (which is an array) but empty
     if (!data || (Array.isArray(data) && data.length === 0))
@@ -20,6 +27,12 @@ export default class View {
     this._parentElement.insertAdjacentHTML('afterbegin', markup);
   }
 
+  /**
+   * Update only the changed element in the DOM
+   * @param {Object | Object[]} data The data to be updated (e.g. Image of recipe)
+   * @returns {undefined} 
+   * @this {} Points to View.js
+   */
   update(data) {
     // If there is no data or there is data (which is an array) but empty
     if (!data || (Array.isArray(data) && data.length === 0)) return;
@@ -95,7 +108,7 @@ export default class View {
       <div class="message">
             <div>
               <svg>
-                <use href="${icons}_icon-smile"></use>
+                <use href="${icons}#icon-smile"></use>
               </svg>
             </div>
             <p>${message}</p>
